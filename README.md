@@ -37,6 +37,8 @@ qverse-agent/
 │   │   │   └── qverse-workflow.ts   # Verse explanation workflow
 │   │   ├── scorers/
 │   │   │   └── qverse-scorer.ts     # Quality evaluation scorers
+│   │   ├── routes/
+│   │   │   └── a2a-agent-route.ts    # A2A protocol route handler
 │   │   └── index.ts                 # Mastra instance
 │   └── services/
 │       └── quran-service.ts         # Quran.com API client
