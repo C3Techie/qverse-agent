@@ -1,5 +1,5 @@
 
-import { Mastra } from '@mastra/core/mastra';
+import { Mastra } from '@mastra/core';
 import { PinoLogger } from '@mastra/loggers';
 import { LibSQLStore } from '@mastra/libsql';
 import { qverseWorkflow } from './workflows/qverse-workflow';
@@ -20,10 +20,8 @@ export const mastra = new Mastra({
     respectfulnessScorer,
   },
   server: {
-    apiRoutes: [
-      // A2A Protocol Route - Primary integration endpoint for Telex
-      a2aAgentRoute,
-    ],
+    port: 4111,
+    apiRoutes: [a2aAgentRoute],
   },
   storage: new LibSQLStore({
     // stores observability, scores, ... into memory storage, if it needs to persist, change to file:../mastra.db

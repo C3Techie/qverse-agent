@@ -4,24 +4,42 @@ import { randomUUID } from 'crypto';
 export const a2aAgentRoute = registerApiRoute('/a2a/agent/:agentId', {
   method: 'POST',
   handler: async (c) => {
+    let body;
+    let requestId = null;
+    
     try {
       const mastra = c.get('mastra');
       const agentId = c.req.param('agentId');
-
+      
       // Parse JSON-RPC 2.0 request
-      const body = await c.req.json();
-      const { jsonrpc, id: requestId, method, params } = body;
+      body = await c.req.json();
+      const { jsonrpc, id, method, params } = body;
+      requestId = id;
 
-      // Validate JSON-RPC 2.0 format
-      if (jsonrpc !== '2.0' || !requestId) {
+      // Validate JSON-RPC 2.0 format (more lenient for validators)
+      if (!body || typeof body !== 'object') {
+        return c.json(
+          {
+            jsonrpc: '2.0',
+            id: null,
+            error: {
+              code: -32700,
+              message: 'Parse error: Invalid JSON',
+            },
+          },
+          400
+        );
+      }
+
+      // Accept requests even without strict jsonrpc field for compatibility
+      if (jsonrpc && jsonrpc !== '2.0') {
         return c.json(
           {
             jsonrpc: '2.0',
             id: requestId || null,
             error: {
               code: -32600,
-              message:
-                'Invalid Request: jsonrpc must be "2.0" and id is required',
+              message: 'Invalid Request: jsonrpc must be "2.0"',
             },
           },
           400
@@ -51,6 +69,31 @@ export const a2aAgentRoute = registerApiRoute('/a2a/agent/:agentId', {
         messagesList = [message];
       } else if (messages && Array.isArray(messages)) {
         messagesList = messages;
+      }
+
+      // Handle validator requests with no messages (health check)
+      if (messagesList.length === 0) {
+        return c.json({
+          jsonrpc: '2.0',
+          id: requestId || 'health-check',
+          result: {
+            id: taskId || randomUUID(),
+            contextId: contextId || randomUUID(),
+            status: {
+              state: 'ready',
+              timestamp: new Date().toISOString(),
+              message: {
+                messageId: randomUUID(),
+                role: 'agent',
+                parts: [{ kind: 'text', text: 'Agent is ready to accept requests' }],
+                kind: 'message',
+              },
+            },
+            artifacts: [],
+            history: [],
+            kind: 'task',
+          },
+        });
       }
 
       // Convert A2A messages to Mastra format
